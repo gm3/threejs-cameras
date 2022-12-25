@@ -17,26 +17,7 @@
 	<body>
 		<script src="js/three.js"></script>
 		<script>
-			/* const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
 
-const renderer = new THREE.WebGLRenderer();
-renderer.setSize( window.innerWidth, window.innerHeight );
-document.body.appendChild( renderer.domElement );
-
-const geometry = new THREE.BoxGeometry( 1, 1, 1 );
-const material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
-const cube = new THREE.Mesh( geometry, material );
-scene.add( cube );
-
-camera.position.z = 5;
-
-function animate() {
-	requestAnimationFrame( animate );
-  cube.rotation.x += 0.01;
-cube.rotation.y += 0.01;
-	//renderer.render( scene, camera );
-} */
 
 // Three.js - Responsive
 // from https://r105.threejsfundamentals.org/threejs/threejs-render-target.html
@@ -52,20 +33,24 @@ function main() {
   const renderer = new THREE.WebGLRenderer;
   document.body.appendChild( renderer.domElement );
 
-  const rtWidth = 1920;
-  const rtHeight = 1080;
+  const rtWidth = window.innerWidth;
+  const rtHeight = window.innerHeight;
   const renderTarget = new THREE.WebGLRenderTarget(rtWidth, rtHeight);
 
   const rtFov = 75;
   const rtAspect = rtWidth / rtHeight;
   const rtNear = 0.1;
-  const rtFar = 5;
-  var rtCamera = new THREE.PerspectiveCamera(rtFov, rtAspect, rtNear, rtFar);
-  rtCamera.position.z = 2;
+  const rtFar = 10;
 
+  // rtCameras
+  var rtCamera = new THREE.PerspectiveCamera(rtFov, rtAspect, rtNear, rtFar);
+  rtCamera.position.set(0, 0, 4);
+  
+// create Renter Texture Scene
   const rtScene = new THREE.Scene();
   rtScene.background = new THREE.Color('red');
 
+  // Light to rtScene
   {
     const color = 0xFFFFFF;
     const intensity = 1;
@@ -75,16 +60,21 @@ function main() {
   }
 
 
-
+// Setup regular Cameras
   const fov = 75;
-  const aspect = 2; // the canvas default
+  const aspect = window.innerWidth / window.innerHeight; // the canvas default
   const near = 0.1;
   const far = 5;
 
   // define cameras and positions
 
-  const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
-  camera.position.set(0, 0, 2);
+  // full screen camera
+  const fullScreenCamera = new THREE.PerspectiveCamera(fov, aspect, near, far);
+  fullScreenCamera.position.set(0, 0, 0);
+
+ // selectable cameras
+ /*  const camera1 = new THREE.PerspectiveCamera(fov, aspect, near, far);
+  camera1.position.set(0, 0, 0);
   const camera2 = new THREE.PerspectiveCamera(fov, aspect, near, far);
   camera2.position.set(0, 0, 2.5);
   const camera3 = new THREE.PerspectiveCamera(fov, aspect, near, far);
@@ -100,53 +90,59 @@ function main() {
   const camera8 = new THREE.PerspectiveCamera(fov, aspect, near, far);
   camera8.position.set(1, 0, 2);
   const camera9 = new THREE.PerspectiveCamera(fov, aspect, near, far);
-  camera9.position.set(1, 0, 3);
+  camera9.position.set(1, 0, 3); */
 
 
   // create variable for current camera
-  var currentCamera = camera;
+  var currentCamera = fullScreenCamera;
 
   const scene = new THREE.Scene();
 
 
   // listen for keyboard input to change cameras
   window.addEventListener('keydown', function(event) {
+    if (event.key === '0') {
+      console.log("FullScreen Mode");
+      currentCamera = fullScreenCamera;
+      //rtCamera = currentCamera;
+    };
+    
     if (event.key === '1') {
       console.log("You changed to Camera " + event.key);
-      currentCamera = camera;
-      rtCamera = currentCamera;
+      rtCamera.position.set(0, 0, 1); 
+      
     } else if (event.key === '2') {
       console.log("You changed to Camera " + event.key);
-      currentCamera = camera2;
-      rtCamera = currentCamera;
+      rtCamera.position.set(0, 0, 1.5); 
+     
     } else if (event.key === '3') {
       console.log("You changed to Camera " + event.key);
-      currentCamera = camera3;
-      rtCamera = currentCamera;
+      rtCamera.position.set(0, 0, 2); 
+   
     } else if (event.key === '4') {
       console.log("You changed to Camera " + event.key);
-      currentCamera = camera4;
-      rtCamera = currentCamera;
+      rtCamera.position.set(0, 0, 2.5);
+    
     } else if (event.key === '5') {
       console.log("You changed to Camera " + event.key);
-      currentCamera = camera5;
-      rtCamera = currentCamera;
+      rtCamera.position.set(0, 0, 3);
+ 
     } else if (event.key === '6') {
       console.log("You changed to Camera " + event.key);
-      currentCamera = camera6;
-      rtCamera = currentCamera;
+      rtCamera.position.set(0, 0, 3.5);
+  
     } else if (event.key === '7') {
       console.log("You changed to Camera " + event.key);
-      currentCamera = camera7;
-      rtCamera = currentCamera;
+      rtCamera.position.set(0, 0, 4);
+ 
     } else if (event.key === '8') {
       console.log("You changed to Camera " + event.key);
-      currentCamera = camera8;
-      rtCamera = currentCamera;
+      rtCamera.position.set(0, 0, 4.5);
+
     } else if (event.key === '9') {
       console.log("You changed to Camera " + event.key);
-      currentCamera = camera9;
-      rtCamera = currentCamera;
+      rtCamera.position.set(0, 0, 6);
+   
     }
 
   });
@@ -179,11 +175,8 @@ function main() {
     return cube;
   }
 
-
   const rtCubes = [
     makeInstance(geometry, 0x44aa88, 0),
-    makeInstance(geometry, 0x8844aa, -2),
-    makeInstance(geometry, 0xaa8844, 2),
   ];
 
 
@@ -191,13 +184,16 @@ function main() {
   const material = new THREE.MeshPhongMaterial({
     map: renderTarget.texture,
   });
+
+  
   const cube = new THREE.Mesh(geometry, material);
-  scene.add(cube);
+  //scene.add(cube);
 
   // create monitor plane
-  const monitorGeometry = new THREE.PlaneGeometry(5, 3);
+  const monitorGeometry = new THREE.PlaneBufferGeometry(2 * aspect, 2);
   const monitorOutput = new THREE.Mesh(monitorGeometry, material);
   scene.add(monitorOutput);
+  monitorOutput.position.z = -1;
 
   function resizeRendererToDisplaySize(renderer) {
     const canvas = renderer.domElement;
@@ -210,6 +206,12 @@ function main() {
     return needResize;
   }
 
+
+  window.addEventListener('resize', () => {
+  const aspect = window.innerWidth / window.innerHeight;
+  quadGeometry.attributes.position.array[3] = aspect;
+  quadGeometry.attributes.position.needsUpdate = true;
+});
   // render
 
   function render(time) {
@@ -217,8 +219,7 @@ function main() {
 
     if (resizeRendererToDisplaySize(renderer)) {
       const canvas = renderer.domElement;
-      camera.aspect = canvas.clientWidth / canvas.clientHeight;
-      camera.updateProjectionMatrix();
+      
     }
 
     // rotate all the cubes in the render target scene
@@ -239,11 +240,14 @@ function main() {
     cube.rotation.y = time * 1.1;
 
     // render the scene to the canvas
-    renderer.render(scene, currentCamera);
+    renderer.render(monitorOutput, currentCamera);
+    renderer.render(scene, currentCamera, renderTarget);
     renderer.setSize( window.innerWidth, window.innerHeight );
+    currentCamera.aspect = aspect;
+    currentCamera.updateProjectionMatrix();
     requestAnimationFrame(render);
   }
-
+  //renderer.render(monitorOutput, currentCamera);
   requestAnimationFrame(render);
 }
 
