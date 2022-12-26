@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html>
 <html>
 	<head>
@@ -22,18 +20,32 @@
 'use strict';
 
 function main() {
-  const canvas = document.querySelector('#c');
+
+  // create main canvas called threeCamCanvas
+
+  const threeCamCanvas = document.querySelector('#c');
+  // create renderer that will render the scene in render();
   const renderer = new THREE.WebGLRenderer;
+
+
   document.body.appendChild( renderer.domElement );
 
+  // Set the Render Texture width and height and create render target with WebGLRenderTarget();
   const rtWidth = window.innerWidth;
   const rtHeight = window.innerHeight;
   const renderTarget = new THREE.WebGLRenderTarget(rtWidth, rtHeight);
 
+  // set camera deafults fov, aspect ratio for the rtCamera
   const rtFov = 75;
   const rtAspect = rtWidth / rtHeight;
   const rtNear = 0.1;
   const rtFar = 10;
+
+  // state tracking variables
+  let isFullScreen = false;
+  var isZoomed = false;
+  var isOnTrack = false;
+  var isLookingAtTarget = false;
 
   // rtCameras
   var rtCamera = new THREE.PerspectiveCamera(rtFov, rtAspect, rtNear, rtFar);
@@ -41,9 +53,11 @@ function main() {
   
   // create Renter Texture Scene
   const rtScene = new THREE.Scene();
+
+  // set the background color cleared to red of the rtScene
   rtScene.background = new THREE.Color('red');
 
-  // Light to rtScene
+  // add a Light to rtScene
   {
     const color = 0xFFFFFF;
     const intensity = 1;
@@ -52,54 +66,39 @@ function main() {
     rtScene.add(light);
   }
 
-
-  // Setup regular Cameras
+  // Setup fullscreen Cameras defaults
   const fov = 75;
   const aspect = window.innerWidth / window.innerHeight; // the canvas default
   const near = 0.1;
-  const far = 5;
+  const far = 10;
 
-  // define cameras and positions
+  // define fullscreen cameras and positions
 
   // full screen camera
   const fullScreenCamera = new THREE.PerspectiveCamera(fov, aspect, near, far);
   fullScreenCamera.position.set(0, 0, 0);
 
- // selectable cameras
- /*  const camera1 = new THREE.PerspectiveCamera(fov, aspect, near, far);
-  camera1.position.set(0, 0, 0);
-  const camera2 = new THREE.PerspectiveCamera(fov, aspect, near, far);
-  camera2.position.set(0, 0, 2.5);
-  const camera3 = new THREE.PerspectiveCamera(fov, aspect, near, far);
-  camera3.position.set(0, 0, 3);
-  const camera4 = new THREE.PerspectiveCamera(fov, aspect, near, far);
-  camera4.position.set(-1, 0, 1);
-  const camera5 = new THREE.PerspectiveCamera(fov, aspect, near, far);
-  camera5.position.set(-1, 0, 2);
-  const camera6 = new THREE.PerspectiveCamera(fov, aspect, near, far);
-  camera6.position.set(-1, 0, 3);
-  const camera7 = new THREE.PerspectiveCamera(fov, aspect, near, far);
-  camera7.position.set(1, 0, 1);
-  const camera8 = new THREE.PerspectiveCamera(fov, aspect, near, far);
-  camera8.position.set(1, 0, 2);
-  const camera9 = new THREE.PerspectiveCamera(fov, aspect, near, far);
-  camera9.position.set(1, 0, 3); */
-
+  // Create 3td Test Camera
+    // full screen camera
+    const testCamera = new THREE.PerspectiveCamera(fov, aspect, near, far);
+    testCamera.position.set(0, 0, 6);
+    
 
   // create variable for current camera
-  var currentCamera = fullScreenCamera;
+  var currentCamera = testCamera;
 
+  // create main scene
   const scene = new THREE.Scene();
-
 
   // listen for keyboard input to change cameras
   window.addEventListener('keydown', function(event) {
-    if (event.key === '0') {
-      console.log("FullScreen Mode");
-      currentCamera = fullScreenCamera;
-      //rtCamera = currentCamera;
+    if (event.key === '0') 
+    {
+      isFullScreen = !isFullScreen;
     };
     
+
+    // 1-9 keyboard inputs handlers
     if (event.key === '1') {
       console.log("You changed to Camera " + event.key);
       rtCamera.position.set(0, 0, 1); 
@@ -148,7 +147,7 @@ function main() {
     scene.add(light);
   }
 
-  // ad boxes
+  // add boxes
   const boxWidth = 1;
   const boxHeight = 1;
   const boxDepth = 1;
@@ -170,6 +169,10 @@ function main() {
 
   const rtCubes = [
     makeInstance(geometry, 0x44aa88, 0),
+    makeInstance(geometry, 0x44aa88, 1),
+    makeInstance(geometry, 0x44aa88, 2),
+    makeInstance(geometry, 0x44aa88, -1),
+    makeInstance(geometry, 0x44aa88, -2),
   ];
 
 
@@ -189,10 +192,10 @@ function main() {
   monitorOutput.position.z = -1;
 
   function resizeRendererToDisplaySize(renderer) {
-    const canvas = renderer.domElement;
-    const width = canvas.clientWidth;
-    const height = canvas.clientHeight;
-    const needResize = canvas.width !== width || canvas.height !== height;
+    const threeCamCanvas = renderer.domElement;
+    const width = threeCamCanvas.clientWidth;
+    const height = threeCamCanvas.clientHeight;
+    const needResize = threeCamCanvas.width !== width || threeCamCanvas.height !== height;
     if (needResize) {
       renderer.setSize(width, height, false);
     }
@@ -202,8 +205,8 @@ function main() {
 
   window.addEventListener('resize', () => {
   const aspect = window.innerWidth / window.innerHeight;
-  quadGeometry.attributes.position.array[3] = aspect;
-  quadGeometry.attributes.position.needsUpdate = true;
+  monitorGeometry.attributes.position.array[3] = aspect;
+  monitorGeometry.attributes.position.needsUpdate = true;
 });
   // render
 
@@ -211,7 +214,7 @@ function main() {
     time *= 0.001;
 
     if (resizeRendererToDisplaySize(renderer)) {
-      const canvas = renderer.domElement;
+      const threeCamCanvas = renderer.domElement;
       
     }
 
@@ -222,6 +225,16 @@ function main() {
       cube.rotation.x = rot;
       cube.rotation.y = rot;
     });
+
+    // listen for fullscreen stae flag "isFullScreen"
+    if(isFullScreen)
+      {
+      currentCamera = fullScreenCamera;
+      //console.log("FullScreen Mode is on");
+      } else {
+      currentCamera = testCamera;
+      //console.log("FullScreen Mode is off");
+      }
 
     // draw render target scene to render target
     renderer.setRenderTarget(renderTarget);
@@ -245,11 +258,7 @@ function main() {
 }
 
 
-
-
 main();
-
-
 		</script>
 	</body>
 </html>
